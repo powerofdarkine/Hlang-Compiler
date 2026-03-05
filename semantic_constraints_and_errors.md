@@ -142,23 +142,6 @@ func shadowError() -> void {
     }
 }
 
-// Error: Function not yet declared
-func earlyCall() -> void {
-    laterFunc();  // Undeclared(Function(), laterFunc)
-}
-
-func laterFunc() -> void {
-    print("Called later");
-}
-
-// Error: Function declared but not accessible
-func main() -> void {
-    {
-        func localFunc() -> void { print("local"); }
-    }
-    localFunc();  // Undeclared(Function(), localFunc) - out of scope
-}
-
 // Valid: Forward reference to global function
 func validCall() -> void {
     globalFunc();  // Valid: globalFunc declared later but in global scope
@@ -191,7 +174,7 @@ const MAX_VALUE = 100;
 
 **Binary Operation Rules:**
 - **Arithmetic (`+`, `-`, `*`, `/`, `%`):**
-  - Both operands must be `int` or `float`
+  - Both operands must be `int` or `float` (except for the `%`, only the `int` is accepted)
   - If both are `int`, result is `int`
   - If either is `float`, result is `float`
   - Special case: `string + string` is valid (concatenation)
@@ -315,18 +298,6 @@ func noReturnType() {                   // TypeCannotBeInferred - missing return
 func emptyArray() -> void {
     let arr = [];                       // TypeCannotBeInferred - empty array literal
     arr[0] = 5;                         // Cannot determine element type
-}
-
-// Error: Circular type dependencies
-func circularDependency() -> void {
-    let a = b + 1;                      // TypeCannotBeInferred - b not yet declared
-    let b = a * 2;                      // Creates circular dependency
-}
-
-// Error: Forward reference in initialization
-func forwardRef() -> void {
-    let result = processValue(undefined); // TypeCannotBeInferred - undefined not declared
-    let undefined = getValue();
 }
 
 // Error: Complex expression without sufficient context
@@ -957,8 +928,8 @@ func edgeCases() -> void {
     // processEmptyArray([]);           // Would depend on array type inference
     
     // Literal arguments
-    add(5 + 3, 10 - 2);                // Valid - expressions as arguments
-    multiply(3.14159, 2.0);            // Valid - float literals
+    let sum = add(5 + 3, 10 - 2);                // Valid - expressions as arguments
+    let product = multiply(3.14159, 2.0);        // Valid - float literals
     greet("Literal", 18 + 7, !false);  // Valid - mixed expressions
 }
 ```

@@ -1,5 +1,4 @@
 # HLang Programming Language Specification
-**Version 1.0 - June 2025**
 
 ## Table of Contents
 
@@ -33,14 +32,18 @@ HLang (Hybrid Language) is a simplified programming language designed for educat
 ## Program Structure
 
 A HLang program consists of:
-1. Optional constant declarations
-2. Function declarations
-3. A mandatory `main` function as the entry point
+1. Optional global constant declarations (using `const` keyword)
+2. Function declarations (including user-defined functions)
+3. A mandatory `main` function as the entry point. The `main` function is a `void` function and must not have any parameters.
+
+**Note:** Variable declarations (using `let` keyword) are only allowed within function bodies and cannot be declared at the global program level. Only constants can be declared globally.
 
 ### Example program structure:
 ```hlang
+// Global constant declaration (allowed at program level)
 const PI: float = 3.14159;
 
+// Function declaration
 func factorial(n: int) -> int {
     if (n <= 1) {
         return 1;
@@ -48,8 +51,12 @@ func factorial(n: int) -> int {
     return n * factorial(n - 1);
 }
 
+// Mandatory main function
 func main() -> void {
-    print("Factorial of 5 is: " + str(factorial(5)));
+    // Variable declarations are only allowed inside functions
+    let number = 5;
+    let result = factorial(number);
+    print("Factorial of " + str(number) + " is: " + str(result));
 }
 ```
 
@@ -448,13 +455,15 @@ const PRIMES = [2, 3, 5, 7, 11];      // Type inferred as [int; 5]
 ### Scope Rules and Visibility
 
 **Global Scope:**
-- Global constants declared at the program level have program-wide scope
-- Global constants are visible to all functions and can be accessed throughout the program
+- Only constant declarations (using `const`) are allowed at the global program level
+- Global constants have program-wide scope and are visible to all functions
 - Global constants must be declared before any function declarations
+- Variable declarations (using `let`) are NOT allowed at global scope
 
 **Function Scope:**
 - Function parameters have function-wide scope and are visible throughout the function body
 - Function parameters are immutable bindings (similar to constants)
+- Local variables and constants can be declared within function bodies
 
 **Block Scope:**
 - Local variables and constants declared within blocks (enclosed by `{` and `}`) have block scope
@@ -469,11 +478,13 @@ const PRIMES = [2, 3, 5, 7, 11];      // Type inferred as [int; 5]
 
 **Scope Examples:**
 ```hlang
-const GLOBAL_CONST: int = 42;  // Global scope
+// Global constants only (no global variables allowed)
+const GLOBAL_CONST: int = 42;  // Global scope - OK
+// let globalVar = 100;        // Error: variables not allowed at global scope
 
 func example() -> void {
-    let x = 10;                // Function scope
-    const LOCAL_CONST = 20;    // Function scope
+    let x = 10;                // Function scope - OK
+    const LOCAL_CONST = 20;    // Function scope - OK
     
     if (x > 5) {
         let y = 30;            // Block scope (if-block)
@@ -578,10 +589,10 @@ Comparison expressions evaluate the relationship between two operands and always
 
 | Operator | Description | Operand Types | Result Type |
 |----------|-------------|---------------|-------------|
-| `<` | Less than | int, float, string | bool |
-| `<=` | Less than or equal | int, float, string | bool |
-| `>` | Greater than | int, float, string | bool |
-| `>=` | Greater than or equal | int, float, string | bool |
+| `<` | Less than | int, float | bool |
+| `<=` | Less than or equal | int, float | bool |
+| `>` | Greater than | int, float | bool |
+| `>=` | Greater than or equal | int, float | bool |
 
 **Comparison Semantics:**
 - **Numeric comparisons:** Follow standard mathematical ordering
@@ -1491,12 +1502,13 @@ HLang uses different parameter passing mechanisms depending on the data type, ba
 - Performance: Efficient for small data types
 
 ```hlang
-func modifyInt(x: int) -> void {
-    x = 100;  // Only modifies local parameter copy
+func printModified(x: int) -> void {
+    let y = x + 1;
+    print(y);  // Works with a copy; original value remains unchanged
 }
 
 let value = 42;
-modifyInt(value);
+printModified(value);
 // value is still 42 after function call
 ```
 
@@ -1515,24 +1527,6 @@ func processString(text: string) -> string {
 let original = "data";
 let result = processString(original);
 // original remains "data", result is "data processed"
-```
-
-**Pass-by-Reference (Arrays):**
-- Applied to: All array types `[T; N]`
-- Behavior: Passes reference to original array
-- Modifications inside function affect the original array
-- Performance: Efficient for large data structures
-
-```hlang
-func fillArray(arr: [int; 3], value: int) -> void {
-    for (i in [0, 1, 2]) {
-        arr[i] = value;  // Modifies original array
-    }
-}
-
-let numbers = [1, 2, 3];
-fillArray(numbers, 99);
-// numbers is now [99, 99, 99]
 ```
 
 ### Function Scope and Local Variables
@@ -1691,15 +1685,15 @@ print("Hello, " + name + "!");    // Output greeting
 
 **Type Conversion Functions:**
 
-HLang provides overloaded conversion functions for type transformations:
+HLang provides conversion functions for type transformations:
 
 | Function | Input Type | Output Type | Description |
 |----------|------------|-------------|-------------|
-| `str` | `int` | `string` | Convert integer to string representation |
-| `str` | `float` | `string` | Convert float to string representation |
-| `str` | `bool` | `string` | Convert boolean to string ("true" or "false") |
-| `int` | `string` | `int` | Parse string to integer (runtime error if invalid) |
-| `float` | `string` | `float` | Parse string to float (runtime error if invalid) |
+| `int2str` | `int` | `string` | Convert integer to string representation |
+| `float2str` | `float` | `string` | Convert float to string representation |
+| `bool2str` | `bool` | `string` | Convert boolean to string ("true" or "false") |
+| `str2int` | `string` | `int` | Parse string to integer (runtime error if invalid) |
+| `str2float` | `string` | `float` | Parse string to float (runtime error if invalid) |
 
 ```hlang
 // String conversion examples:
@@ -1731,11 +1725,13 @@ let floatNum = float(floatStr);   // 3.14
 | `len` | `([T; N]) -> int` | Get the length of an array |
 
 ```hlang
-let numbers = [1, 2, 3, 4, 5];
-let arrayLength = len(numbers);   // 5
+func example() -> void {
+    let numbers = [1, 2, 3, 4, 5];
+    let arrayLength = len(numbers);   // 5
 
-let names = ["Alice", "Bob"];
-let nameCount = len(names);       // 2
+    let names = ["Alice", "Bob"];
+    let nameCount = len(names);       // 2
+}
 ```
 
 ---
@@ -1803,5 +1799,3 @@ HLang provides a balanced approach to teaching compiler construction. It include
 The language is designed to scale well across all four assignment phases, with each phase building naturally on the previous one. Students can focus on learning compiler techniques rather than struggling with language complexity.
 
 ---
-
-**© 2025 - HO CHI MINH CITY UNIVERSITY OF TECHNOLOGY**
