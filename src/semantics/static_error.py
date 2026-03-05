@@ -31,6 +31,7 @@ class Undeclared(StaticError):
         name (str): The name of the undeclared identifier/function
     """
     def __init__(self, kind, name):
+        
         self.kind = kind
         self.name = name
         kind_str = "Identifier" if isinstance(kind, Identifier) else "Function"
@@ -108,3 +109,12 @@ class Function:
     """Marker class to indicate undeclared function"""
     def __str__(self):
         return "Function"
+
+
+
+    
+    
+    
+
+
+ 

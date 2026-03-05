@@ -57,7 +57,7 @@ else
     RESET=\033[0m
 endif
 
-.PHONY: help check setup build clean clean-cache clean-reports test-lexer test-parser test-ast test-checker clean-venv
+.PHONY: help check setup build clean clean-cache clean-reports test-lexer test-parser test-ast test-checker test-codegen clean-venv
 
 # Default target - show help
 help:
@@ -73,6 +73,7 @@ help:
 	@echo "  $(YELLOW)make test-parser$(RESET) - Run parser tests and generate reports"
 	@echo "  $(YELLOW)make test-ast$(RESET)    - Run AST generation tests and generate reports"
 	@echo "  $(YELLOW)make test-checker$(RESET) - Run semantic checker tests and generate reports"
+	@echo "  $(YELLOW)make test-codegen$(RESET) - Run code generation tests and generate reports"
 	@echo ""
 	@echo "$(GREEN)Cleaning:$(RESET)"
 	@echo "  $(YELLOW)make clean$(RESET)         - Clean build and external directories"
@@ -245,6 +246,14 @@ test-checker: build
 	$(call MKDIR_CMD,$(REPORT_DIR))
 	@PYTHONPATH=$(CURDIR) $(VENV_PYTHON) -m pytest tests/test_checker.py --html=$(REPORT_DIR)/checker/index.html --timeout=5 --self-contained-html -v || true
 	@echo "$(GREEN)Semantic checker tests completed. Reports generated at $(REPORT_DIR)/checker/index.html$(RESET)"
+	@$(MAKE) clean-cache
+
+test-codegen: build
+	@echo "$(YELLOW)Running code generation tests...$(RESET)"
+	$(call RM_CMD,$(REPORT_DIR)/codegen)
+	$(call MKDIR_CMD,$(REPORT_DIR))
+	@PYTHONPATH=$(CURDIR) $(VENV_PYTHON) -m pytest tests/test_codegen.py --html=$(REPORT_DIR)/codegen/index.html --timeout=5 --self-contained-html -v || true
+	@echo "$(GREEN)Code generation tests completed. Reports generated at $(REPORT_DIR)/codegen/index.html$(RESET)"
 	@$(MAKE) clean-cache
 
 # Function to find Python version

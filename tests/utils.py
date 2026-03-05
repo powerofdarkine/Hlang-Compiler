@@ -1,5 +1,8 @@
 import sys
 import os
+import subprocess
+import tempfile
+import shutil
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "build"))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "src"))
@@ -10,6 +13,9 @@ from build.HLangParser import HLangParser
 from src.astgen.ast_generation import ASTGeneration
 from src.semantics.static_checker import StaticChecker
 from src.utils.error_listener import NewErrorListener
+from src.codegen.codegen import CodeGenerator as CodeGen
+from src.utils.nodes import *
+from src.codegen.error import *
 
 
 class Tokenizer:
@@ -114,3 +120,75 @@ class Checker:
             return "Static checking passed"
         except Exception as e:
             return str(e)
+
+
+class CodeGenerator:
+    """Class to generate and run code from AST."""
+
+    def __init__(self):
+        from src.codegen.codegen import CodeGenerator as CodeGen
+        self.codegen = CodeGen()
+        self.runtime_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "src", "runtime")
+
+    def generate_and_run(self, source):
+        """Generate code from AST and run it, return output"""
+        ast = source
+        if isinstance(ast, str): 
+            ast_gen = ASTGenerator(ast)
+            ast = ast_gen.generate()
+        #try:
+            # Change to runtime directory and generate code from AST
+        # Find generated .j file
+        class_file = os.path.join(self.runtime_dir, "HLang.class")
+        
+        if os.path.exists(class_file):
+            os.remove(class_file)
+            
+        original_dir = os.getcwd()
+        os.chdir(self.runtime_dir)
+        try:
+            self.codegen.visit(ast)
+        finally:
+            os.chdir(original_dir)
+        
+        # Find generated .j file
+        j_file = os.path.join(self.runtime_dir, "HLang.j")
+        if not os.path.exists(j_file):
+            return "Error: No .j file generated"
+        
+        # Assemble to .class
+        try:
+            result = subprocess.run(
+                ["java", "-jar", "jasmin.jar", "HLang.j"],
+                cwd=self.runtime_dir,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.returncode != 0:
+                return f"Assembly error: {result.stderr}"
+            
+            # Run program
+            result = subprocess.run(
+                ["java", "HLang"],
+                cwd=self.runtime_dir,
+                capture_output=True,
+                text=True,
+                timeout=10
+            )
+            
+            if result.returncode != 0:
+                return f"Runtime error: {result.stderr}"
+            
+            return result.stdout.strip()
+            
+        except subprocess.TimeoutExpired:
+            return "Timeout"
+        except FileNotFoundError:
+            return "Java not found"
+            
+        # except IllegalOperandException as e:
+        #     return f"Code generation error: {str(e)}"
+        # except IllegalRuntimeException as e:
+        #     return f"Code generation error: {str(e)}"

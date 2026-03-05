@@ -1144,6 +1144,3 @@ When multiple errors could be detected, report the **first** error encountered i
 
 
 ---
-
-*Document prepared for HLang Assignment 3 - Static Semantic Analysis*  
-*Last updated: June 2025*
